@@ -1,0 +1,18 @@
+(()=>{
+const root=document.getElementById('celso-game');if(!root)return;
+const $=id=>document.getElementById(id),target=$('clicker-target'),shop=$('clicker-shop'),key='celso-clicker-v1-'+root.dataset.user;
+const items=[{name:'Clique poderoso',cost:20,click:1,rate:0},{name:'Estagiário da aura',cost:60,click:0,rate:1},{name:'Cristal 67',cost:250,click:5,rate:0},{name:'Gerador neon',cost:650,click:0,rate:10},{name:'Laboratório de aura',cost:2500,click:0,rate:45},{name:'Império Celso',cost:10000,click:25,rate:180}];
+let s={balance:0,total:0,clicks:0,levels:items.map(()=>0),saved:Date.now()};
+const safe=n=>Number.isFinite(n)&&n>=0&&n<=1e15;
+try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v&&safe(v.balance)&&safe(v.total)&&safe(v.clicks)&&Array.isArray(v.levels)&&v.levels.length===items.length&&v.levels.every(n=>Number.isInteger(n)&&n>=0&&n<=500)&&safe(v.saved))s=v;}catch(e){}
+const fmt=n=>Math.floor(n).toLocaleString('pt-BR'),cost=i=>Math.ceil(items[i].cost*Math.pow(1.16,s.levels[i])),click=()=>1+items.reduce((n,it,i)=>n+it.click*s.levels[i],0),rate=()=>items.reduce((n,it,i)=>n+it.rate*s.levels[i],0);
+function gain(n){s.balance=Math.min(1e15,s.balance+n);s.total=Math.min(1e15,s.total+n);}
+function save(){s.saved=Date.now();try{localStorage.setItem(key,JSON.stringify(s));}catch(e){$('clicker-save').textContent='Armazenamento indisponível: progresso apenas nesta sessão.';}}
+const offline=Math.min(7200,Math.max(0,(Date.now()-s.saved)/1000))*rate();if(offline>=1){gain(offline);$('clicker-status').textContent='Bônus de retorno: +'+fmt(offline)+' aura.';}
+const buttons=items.map((it,i)=>{const b=document.createElement('button');b.type='button';b.className='clicker-upgrade';const label=document.createElement('span'),name=document.createElement('strong'),desc=document.createElement('small'),price=document.createElement('strong');name.textContent=it.name;desc.textContent=it.click?'+'+it.click+' por clique':'+'+it.rate+' por segundo';label.append(name,desc);b.append(label,price);b.addEventListener('click',()=>{const c=cost(i);if(s.balance<c||s.levels[i]>=500)return;s.balance-=c;s.levels[i]++;save();render();});shop.append(b);return{b,price,name};});
+function render(){ $('clicker-balance').textContent=fmt(s.balance);$('clicker-total').textContent=fmt(s.total);$('clicker-clicks').textContent=fmt(s.clicks);$('clicker-rate').textContent=fmt(rate())+' aura/s · '+fmt(click())+' aura/clique';const level=1+Math.floor(Math.log10(1+s.total/100)*3);$('clicker-tier').textContent='Nível '+level+' · '+(level<4?'Iniciante':level<8?'Farmador':level<13?'Mestre da aura':'Lenda 67');$('clicker-level').value=Math.min(100,100*(Math.log10(1+s.total/100)*3%1));buttons.forEach(({b,price,name},i)=>{const c=cost(i);b.disabled=s.balance<c||s.levels[i]>=500;price.textContent=fmt(c);name.textContent=items[i].name+' · '+s.levels[i];});}
+let last=performance.now(),anim;
+function farm(){gain(click());s.clicks++;const el=document.createElement('span');el.className='clicker-float';el.textContent='+'+fmt(click());el.style.left=(40+Math.random()*20)+'%';el.style.top='35%';target.append(el);setTimeout(()=>el.remove(),750);target.classList.add('clicked');clearTimeout(anim);anim=setTimeout(()=>target.classList.remove('clicked'),100);render();}
+target.addEventListener('click',farm);document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!e.target.closest('button,input,select,textarea,a,[contenteditable=true]')){e.preventDefault();farm();}});
+setInterval(()=>{const now=performance.now();gain(Math.max(0,(now-last)/1000)*rate());last=now;render();},200);setInterval(save,3000);window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});save();render();
+})();
