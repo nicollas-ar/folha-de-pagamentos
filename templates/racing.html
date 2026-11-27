@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Aura Racing 67{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/css/racing.css">
+<script src="/js/racing.js" defer></script>
+<div class="heading"><p class="eyebrow">ARCADE / 67</p><h1>Aura Racing 67</h1><p>Desvie dos carros e dispute o recorde da equipe. Pontuação apenas recreativa.</p></div>
+<div class="race-layout">
+<section class="panel race-panel">
+<div class="race-hud"><div><small>PONTOS</small><strong id="race-score">0</strong></div><div><small>RECORDE</small><strong id="race-best">—</strong></div></div>
+<canvas id="race-canvas" width="360" height="520" aria-label="Jogo de corrida com três pistas"></canvas>
+<div class="race-controls"><button id="race-left" aria-label="Esquerda">←</button><button id="race-start">Jogar</button><button id="race-right" aria-label="Direita">→</button></div>
+<p id="race-status" role="status">Use as setas ou os botões para desviar. Espaço para iniciar.</p>
+<input id="race-csrf" type="hidden" value="{{ csrf_token() }}">
+</section>
+<section class="panel"><p class="eyebrow">HALL DA AURA</p><h2>Ranking dos funcionários</h2><p>Melhor pontuação de cada jogador.</p><ol id="race-ranking" class="race-ranking">{% for row in ranking %}<li><span>{{ row.name }}{% if row.me %} (você){% endif %}</span><strong>{{ row.score }} pts</strong></li>{% else %}<li>Nenhuma corrida registrada.</li>{% endfor %}</ol></section>
+</div>
+{% endblock %}
