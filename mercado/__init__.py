@@ -15,10 +15,11 @@ ROOT = Path(__file__).resolve().parent.parent
 def create_app(overrides=None):
     load_dotenv(ROOT / '.env')
     app = Flask(__name__, template_folder=str(ROOT/'templates'), static_folder=None)
-    app.config.update(SECRET_KEY=os.getenv('SECRET_KEY'), DATABASE_URL=os.getenv('DATABASE_URL'),
+    app.config.update(SECRET_KEY=os.getenv('SECRET_KEY'), DATABASE_URL=os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL'),
         STORE_NAME=os.getenv('STORE_NAME','Mercado Viva'), APP_URL=os.getenv('APP_URL','http://127.0.0.1:5000'),
         SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax',
-        SESSION_COOKIE_SECURE=os.getenv('APP_ENV')=='production',
+        SESSION_COOKIE_SECURE=bool(os.getenv('VERCEL')) or os.getenv('APP_ENV')=='production',
+        AUTO_INIT_DB=os.getenv('AUTO_INIT_DB', 'true' if os.getenv('VERCEL') or os.getenv('APP_ENV')=='production' else 'false').lower() in ('true','1','yes'),
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=30), MAX_CONTENT_LENGTH=128*1024,
         WTF_CSRF_TIME_LIMIT=3600)
     if overrides: app.config.update(overrides)
@@ -32,6 +33,13 @@ def create_app(overrides=None):
     CSRFProtect(app)
     @app.before_request
     def middleware():
+        if request.endpoint not in ('local_assets','css','images','js'):
+            from .bootstrap import ensure_initialized
+            try:
+                ensure_initialized(app)
+            except (RuntimeError, ValueError) as error:
+                app.logger.error('Inicialização: %s', str(error))
+                return render_template('error.html', title='Configuração pendente', message='Verifique as variáveis de ambiente e os logs da Vercel.'), 503
         g.db = app.extensions['db_session']()
         load_user()
         session.permanent = True
