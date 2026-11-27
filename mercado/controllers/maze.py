@@ -48,3 +48,9 @@ def score():
     g.db.commit()
     best = g.db.get(MazeScore, g.user.id)
     return jsonify(best=best.score, ranking=leaderboard())
+
+
+@bp.get('/arena')
+@login_required
+def arena():
+    return render_template('fighters.html')
