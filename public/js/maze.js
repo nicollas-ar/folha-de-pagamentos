@@ -29,8 +29,8 @@ function draw(){ctx.fillStyle='#080c1a';ctx.fillRect(0,0,450,450);map.forEach((r
 for(const g of ghosts){
  const gx=g.rx*T+15,gy=g.ry*T+15;
  ctx.save();ctx.shadowColor=power>0?'#63dcff':g.c;ctx.shadowBlur=6;
- ctx.fillStyle=power>0?'#416dbf':g.c;ctx.beginPath();ctx.arc(gx,gy,14,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
- if(monster.complete&&monster.naturalWidth)ctx.drawImage(monster,gx-15,gy-16,30,32);
+ ctx.shadowBlur=5;
+ if(monster.complete&&monster.naturalWidth)ctx.drawImage(monster,gx-13.5,gy-18,27,36);
  else {ctx.fillStyle='#fff';ctx.fillRect(gx-7,gy-4,4,5);ctx.fillRect(gx+3,gy-4,4,5);}
  ctx.restore();
 }
