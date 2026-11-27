@@ -7,7 +7,11 @@ from mercado import models
 load_dotenv(Path(__file__).resolve().parent.parent/'.env')
 url=os.getenv('DATABASE_DIRECT_URL') or os.getenv('DATABASE_URL')
 if not url: raise RuntimeError('Configure DATABASE_DIRECT_URL ou DATABASE_URL.')
-if context.is_offline_mode():
+external = context.config.attributes.get('connection')
+if external is not None:
+    context.configure(connection=external,target_metadata=Base.metadata,compare_type=True)
+    with context.begin_transaction(): context.run_migrations()
+elif context.is_offline_mode():
     context.configure(url=normalize_url(url),target_metadata=Base.metadata,literal_binds=True,dialect_opts={'paramstyle':'named'})
     with context.begin_transaction(): context.run_migrations()
 else:
