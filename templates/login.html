@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Acesso · Folha Clara{% endblock %}
+{% block content %}
+<section class="login-layout">
+  <div class="login-copy"><span class="eyebrow">GESTÃO DE PESSOAS</span><h1>Folha organizada.<br><em>Acesso responsável.</em></h1><p>Um ambiente didático para demonstrar permissões, vínculos de equipe e demonstrativos de pagamento.</p></div>
+  <form method="post" class="card login-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <h2>Entrar</h2><label>Usuário<input name="username" autocomplete="username" required autofocus></label>
+    <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
+    <button class="button primary full" type="submit">Acessar painel</button>
+    <p class="small muted">Contas iniciais são criadas pelo comando de preparação e exigem troca de senha.</p>
+  </form>
+</section>
+{% endblock %}
