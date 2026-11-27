@@ -54,3 +54,9 @@ def score():
 @login_required
 def arena():
     return render_template('fighters.html')
+
+
+@bp.get('/celso-clicker')
+@login_required
+def celso_clicker():
+    return render_template('clicker.html')
