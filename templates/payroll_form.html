@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-{% block title %}Novo lançamento · Folha Clara{% endblock %}
-{% block content %}
-<section class="page-heading"><div><span class="eyebrow">NOVO RASCUNHO</span><h1>Lançamento de folha</h1><p>O cálculo considera os valores informados. Não calcula tributos legais automaticamente.</p></div></section>
-<form method="post" class="card form-card"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-grid">
-<label class="wide">Funcionário<select name="employee_id" required><option value="">Selecione</option>{% for employee in employees %}<option value="{{ employee.id }}">{{ employee.full_name }} · {{ employee.code }}</option>{% endfor %}</select></label>
-<label>Referência (ex.: 2026-11)<input name="reference" maxlength="20" required></label><label>Horas extras<input name="overtime_hours" type="number" min="0" step="0.01" value="0"></label><label>Valor da hora extra (R$)<input name="overtime_rate" type="number" min="0" step="0.01" value="0"></label><label>Bonificação (R$)<input name="bonus" type="number" min="0" step="0.01" value="0"></label><label>Outros proventos (R$)<input name="other_earnings" type="number" min="0" step="0.01" value="0"></label><label>Descontos informados (R$)<input name="deductions" type="number" min="0" step="0.01" value="0"></label>
-</div><div class="formula">Bruto = salário-base + (horas extras × valor da hora) + bonificação + outros proventos<br>Líquido = bruto − descontos informados</div><div class="form-actions"><a class="button secondary" href="{{ url_for('payroll_list') }}">Cancelar</a><button class="button primary" type="submit">Calcular e salvar rascunho</button></div></form>
-{% endblock %}
