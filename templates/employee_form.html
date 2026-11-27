@@ -1,8 +1,0 @@
-{% extends 'base.html' %}
-{% block title %}Novo funcionário · Folha Clara{% endblock %}
-{% block content %}
-<section class="page-heading"><div><span class="eyebrow">CADASTRO SEGURO</span><h1>Novo funcionário</h1><p>A conta será vinculada ao cadastro e deverá trocar a senha no primeiro acesso.</p></div></section>
-<form method="post" class="card form-card"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-grid">
-<label>Código<input name="code" required maxlength="20"></label><label>Nome completo<input name="full_name" required></label><label>E-mail<input type="email" name="email" required></label><label>Departamento<input name="department" required></label><label>Cargo<input name="job_title" required></label><label>Salário-base (R$)<input name="base_salary" type="number" min="0" step="0.01" required></label><label>Usuário de acesso<input name="username" required minlength="3"></label><label>Papel<select name="role"><option value="funcionario">Funcionário</option><option value="gestor">Gestor</option></select></label><label class="wide">Senha inicial (mínimo 15 caracteres)<input name="password" type="password" minlength="15" maxlength="128" required></label>
-</div><div class="form-actions"><a class="button secondary" href="{{ url_for('employees') }}">Cancelar</a><button class="button primary" type="submit">Criar cadastro</button></div></form>
-{% endblock %}
