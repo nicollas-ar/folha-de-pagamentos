@@ -2,3 +2,5 @@
 .fighter-keys{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:18px;color:var(--muted);font-size:13px}.fighter-keys kbd{display:inline-block;padding:5px 8px;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;background:var(--accent);color:var(--text);font-weight:800}#fighters{touch-action:auto}
 
 .fighter-hud progress.super-meter{accent-color:#ffe17a;height:10px}.fighter-hud>div{padding:12px;background:var(--accent);border:1px solid var(--line);border-radius:12px}#fighter-super-label{color:#ffe17a;font-weight:800}
+
+.fighter-combo-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;font-size:12px;letter-spacing:1px}.fighter-combo-panel strong{color:#ffe17a;font-size:20px}.fighter-combo-panel progress{width:35%;height:8px;accent-color:#ffe17a}
