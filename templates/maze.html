@@ -3,11 +3,11 @@
 {% block content %}
 <link rel="stylesheet" href="/css/maze.css">
 <script src="/js/maze.js" defer></script>
-<div class="heading"><p class="eyebrow">ARCADE / 67</p><h1>Aura Maze 67</h1><p>Colete toda a aura do labirinto e desvie dos guardiões.</p></div>
+<div class="heading"><p class="eyebrow">ARCADE / 67</p><h1>Aura Maze 67</h1><p>Controle o Pac-Man, colete toda a aura e desvie dos fantasmas.</p></div>
 <div class="maze-layout"><section class="panel"><div class="maze-hud"><div>PONTOS <strong id="maze-score">0</strong></div><div>VIDAS <strong id="maze-lives">3</strong></div><div>FASE <strong id="maze-level">1</strong></div></div>
 <canvas id="maze" width="450" height="450" aria-label="Labirinto de aura"></canvas>
 <div class="maze-buttons"><button id="maze-start">Jogar</button><button id="maze-pause" class="ghost">Pausar</button></div>
 <div class="maze-pad"><button data-dir="up" aria-label="Cima">↑</button><button data-dir="left" aria-label="Esquerda">←</button><button data-dir="down" aria-label="Baixo">↓</button><button data-dir="right" aria-label="Direita">→</button></div>
 <p id="maze-status" role="status">Use as setas ou WASD. Colete as esferas grandes para ficar protegido temporariamente.</p><input id="maze-csrf" type="hidden" value="{{ csrf_token() }}"></section>
-<section class="panel"><img class="maze-mascot" src="/images/aura-monster.svg" alt="Monstro verde farmador de aura"><h2>Hall dos farmadores</h2><p>Melhor pontuação de cada funcionário.</p><ol id="maze-ranking">{% for row in ranking %}<li>{{ row.name }}{% if row.me %} (você){% endif %} — {{ row.score }} pts</li>{% else %}<li>Nenhuma partida registrada.</li>{% endfor %}</ol></section></div>
+<section class="panel"><img class="maze-mascot" src="/images/maze-ghost.svg" alt="Fantasma farmador de aura"><h2>Hall dos farmadores</h2><p>Melhor pontuação de cada funcionário.</p><ol id="maze-ranking">{% for row in ranking %}<li>{{ row.name }}{% if row.me %} (você){% endif %} — {{ row.score }} pts</li>{% else %}<li>Nenhuma partida registrada.</li>{% endfor %}</ol></section></div>
 {% endblock %}
