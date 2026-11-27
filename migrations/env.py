@@ -6,8 +6,8 @@ from mercado.db import Base,make_engine,normalize_url
 from mercado import models
 load_dotenv(Path(__file__).resolve().parent.parent/'.env')
 url=os.getenv('DATABASE_DIRECT_URL') or os.getenv('DATABASE_URL')
-if not url: raise RuntimeError('Configure DATABASE_DIRECT_URL ou DATABASE_URL.')
 external = context.config.attributes.get('connection')
+if not url and external is None: raise RuntimeError('Configure DATABASE_DIRECT_URL ou DATABASE_URL.')
 if external is not None:
     context.configure(connection=external,target_metadata=Base.metadata,compare_type=True)
     with context.begin_transaction(): context.run_migrations()
