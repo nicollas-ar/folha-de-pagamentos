@@ -23,11 +23,11 @@ function generate(){
 }
 function shuffled(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function setup(){
- generate();player={x:1.5,z:1.5,a:0,pitch:0,vx:0,vz:0};charge=100;shield=shieldCd=cool=fx=0;wave=0;bolts=[];remaining=6+level*2;
+ generate();player={x:1.5,z:1.5,a:0,pitch:0,vx:0,vz:0};charge=100;shield=shieldCd=cool=fx=0;wave=0;bolts=[];remaining=Math.min(35,12+level*3);
  goal={x:19.5,z:19.5};
  const pool=shuffled(cells.filter(p=>dist(p,player)>4&&dist(p,goal)>1));
  gems=pool.slice(0,5).map(p=>({...p}));
- orbs=pool.slice(5,11+Math.min(level,5)).map(p=>({...p}));
+ orbs=pool.slice(5,13+Math.min(level,6)).map(p=>({...p,hp:3,maxHp:3,flash:0}));
  chasers=[{x:8.5,z:1.5,type:0,path:[],timer:0},{x:1.5,z:9.5,type:1,path:[],timer:0}];
 }
 function route(a,b){
@@ -36,9 +36,10 @@ function route(a,b){
  const q=[start];for(let i=0;i<q.length;i++){const p=q[i];if(p===end)break;const x=p%N,z=Math.floor(p/N);for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,nz=z+dz,k=nz*N+nx;if(open(nx,nz)&&prev[k]===-1){prev[k]=p;q.push(k);}}}
  if(prev[end]===-1)return [];const out=[];let p=end;while(p!==start){out.unshift({x:p%N+.5,z:Math.floor(p/N)+.5});p=prev[p];}return out;
 }
-function spawn(){const pool=cells.filter(p=>dist(p,player)>3&&dist(p,player)<10&&dist(p,goal)>1&&orbs.every(o=>dist(o,p)>1));if(pool.length){orbs.push({...pool[Math.floor(Math.random()*pool.length)]});remaining--;}}
-function aura(){if(phase!=='play'||cool>0||charge<(mode===1?12:25))return;charge-=mode===1?12:25;cool=mode===1?.3:.8;fx=.22;if(mode===1){bolts.push({x:player.x+Math.cos(player.a)*.35,z:player.z+Math.sin(player.a)*.35,a:player.a,life:1.1});status.textContent='Esfera de aura liberada.';}else{const before=orbs.length;orbs=orbs.filter(o=>dist(o,player)>3);score+=(before-orbs.length)*35;status.textContent='Onda de aura liberada.';}}
-function advanceBolts(dt){for(const b of bolts){b.life-=dt;const steps=Math.max(1,Math.ceil(dt*6/.1));for(let j=0;j<steps&&b.life>0;j++){b.x+=Math.cos(b.a)*dt*6/steps;b.z+=Math.sin(b.a)*dt*6/steps;if(!open(b.x,b.z)){b.life=0;break;}const i=orbs.findIndex(o=>dist(o,b)<.35);if(i>=0){orbs.splice(i,1);score+=35;b.life=0;status.textContent='Entidade de energia purificada!';}}}bolts=bolts.filter(b=>b.life>0);}
+function spawn(){const pool=cells.filter(p=>dist(p,player)>3&&dist(p,player)<10&&dist(p,goal)>1&&orbs.every(o=>dist(o,p)>1));if(pool.length){orbs.push({...pool[Math.floor(Math.random()*pool.length)],hp:3,maxHp:3,flash:0});remaining--;}}
+function purify(o,n){o.hp-=n;o.flash=.2;if(o.hp<=0){orbs=orbs.filter(v=>v!==o);score+=35;status.textContent='Entidade purificada! +35 AURA';}else status.textContent='Entidade: '+o.hp+'/'+o.maxHp+' de resistência.';}
+function aura(){if(phase!=='play'||cool>0||charge<(mode===1?12:25))return;charge-=mode===1?12:25;cool=mode===1?.3:.8;fx=.22;if(mode===1){bolts.push({x:player.x+Math.cos(player.a)*.35,z:player.z+Math.sin(player.a)*.35,a:player.a,life:1.1});status.textContent='Esfera de aura liberada.';}else{status.textContent='Onda de aura liberada.';for(const o of orbs.slice())if(dist(o,player)<=3)purify(o,2);}}
+function advanceBolts(dt){for(const b of bolts){b.life-=dt;const steps=Math.max(1,Math.ceil(dt*6/.1));for(let j=0;j<steps&&b.life>0;j++){b.x+=Math.cos(b.a)*dt*6/steps;b.z+=Math.sin(b.a)*dt*6/steps;if(!open(b.x,b.z)){b.life=0;break;}const i=orbs.findIndex(o=>dist(o,b)<.35);if(i>=0){purify(orbs[i],1);b.life=0;}}}bolts=bolts.filter(b=>b.life>0);}
 function lose(e){phase='lost';captured=e.type;keys.clear();player.vx=player.vz=0;status.textContent='Encontrado! Enter para tentar novamente.';if(document.pointerLockElement===cv)document.exitPointerLock?.();hud();}
 function update(dt){
  const p=player;clock+=dt;
@@ -47,7 +48,7 @@ function update(dt){
  const dx=(Math.cos(p.a)*f-Math.sin(p.a)*r)*speed/n,dz=(Math.sin(p.a)*f+Math.cos(p.a)*r)*speed/n,k=1-Math.exp(-20*dt);
  p.vx+=(dx-p.vx)*k;p.vz+=(dz-p.vz)*k;move(p,p.vx*dt,p.vz*dt);
  charge=Math.min(100,charge+dt*12);cool=Math.max(0,cool-dt);fx=Math.max(0,fx-dt);shield=Math.max(0,shield-dt);shieldCd=Math.max(0,shieldCd-dt);
- advanceBolts(dt);wave+=dt;if(wave>=3&&remaining>0&&orbs.length<14){wave=0;spawn();}
+ advanceBolts(dt);for(const o of orbs)o.flash=Math.max(0,o.flash-dt);wave+=dt;if(wave>=Math.max(1.5,3-level*.15)&&remaining>0&&orbs.length<18){wave=0;spawn();}
  gems=gems.filter(g=>{if(dist(g,p)<.5){score+=67;charge=Math.min(100,charge+30);return false;}return true;});
  for(const e of chasers){e.timer-=dt;if(!e.path.length||e.timer<=0){if(!e.path.length||dist(e,e.path[0])<.12)e.path=route(e,p);e.timer=.35;}const t=e.path[0]||p,d=dist(e,t);if(d<.08){if(e.path.length){e.x=t.x;e.z=t.z;e.path.shift();}e.timer=0;}else{const step=Math.min(d,dt*Math.min((e.type===0?.72:.9)+level*.045,1.3));move(e,(t.x-e.x)*step/d,(t.z-e.z)*step/d);}if(dist(e,p)<.48&&shield===0){lose(e);return;}}
  if(!orbs.length&&!remaining&&!gems.length&&dist(p,goal)<.7){score+=200;level++;setup();status.textContent='Nova fase!';}
@@ -70,7 +71,7 @@ function render(){
  for(const o of objects){
  const size=PROJ/o.depth,hh=size*(o.kind==='face'?1.45:o.kind==='exit'?1.4:o.kind==='bolt'?.14:.55),ww=hh*(o.kind==='face'?.72:o.kind==='exit'?.65:1),cx=W/2+PROJ*o.side/o.depth,bottom=o.kind==='bolt'?horizon+hh/2:horizon+size*.75,top=bottom-hh,left=cx-ww/2;
  const img=o.kind==='face'?sprites[o.type]:null;
- for(let i=Math.max(0,Math.floor(left));i<Math.min(W,Math.ceil(left+ww));i++){if(depths[i]<=o.depth)continue;const u=clamp((i-left)/ww,0,.9999);if(img&&img.complete&&img.naturalWidth){ctx.drawImage(img,Math.floor(u*img.naturalWidth),0,1,img.naturalHeight,i,top,1,hh);}else{const edge=Math.abs(u-.5)*2,shape=o.kind==='exit'?1:Math.sqrt(Math.max(0,1-edge*edge));ctx.fillStyle=o.kind==='bolt'?'#9effff':o.kind==='gem'?'#95ffb2':o.kind==='exit'?(!orbs.length&&!gems.length&&!remaining?'#5cffb0':'#a64061'):o.kind==='face'?'#c2d9ec':'#ae72ff';ctx.fillRect(i,top+hh*(1-shape)/2,1,hh*shape);}}
+ for(let i=Math.max(0,Math.floor(left));i<Math.min(W,Math.ceil(left+ww));i++){if(depths[i]<=o.depth)continue;const u=clamp((i-left)/ww,0,.9999);if(img&&img.complete&&img.naturalWidth){ctx.drawImage(img,Math.floor(u*img.naturalWidth),0,1,img.naturalHeight,i,top,1,hh);}else{const edge=Math.abs(u-.5)*2,shape=o.kind==='exit'?1:Math.sqrt(Math.max(0,1-edge*edge));ctx.fillStyle=o.kind==='bolt'?'#9effff':o.kind==='gem'?'#95ffb2':o.kind==='exit'?(!orbs.length&&!gems.length&&!remaining?'#5cffb0':'#a64061'):o.kind==='face'?'#c2d9ec':o.flash>0?'#e6deff':o.hp===1?'#6844b1':o.hp===2?'#9060d6':'#ae72ff';ctx.fillRect(i,top+hh*(1-shape)/2,1,hh*shape);}}
  }
  // Small route map, kept independent of the rendering backend.
  const m=3.2,ox=W-N*m-9,oz=9;ctx.fillStyle='#090c19';ctx.fillRect(ox-3,oz-3,N*m+6,N*m+6);
