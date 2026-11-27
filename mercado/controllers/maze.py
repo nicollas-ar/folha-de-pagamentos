@@ -60,3 +60,9 @@ def arena():
 @login_required
 def celso_clicker():
     return render_template('clicker.html')
+
+
+@bp.get('/celso-3d')
+@login_required
+def celso_3d():
+    return render_template('celso3d.html')
