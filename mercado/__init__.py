@@ -97,6 +97,6 @@ def create_app(overrides=None):
         return render_template('error.html',title='Formulário expirado',message='Atualize a página e tente novamente.'),400
     for status in (403,404,500):
         app.register_error_handler(status, lambda e: (render_template('error.html',title=f'Erro {e.code}',message='Acesso não permitido, página inexistente ou falha interna.'),e.code))
-    from .controllers import auth, catalog, pos, reports, racing
-    for module in (auth,catalog,pos,reports,racing): app.register_blueprint(module.bp)
+    from .controllers import auth, catalog, pos, reports, racing, maze
+    for module in (auth,catalog,pos,reports,racing,maze): app.register_blueprint(module.bp)
     return app
