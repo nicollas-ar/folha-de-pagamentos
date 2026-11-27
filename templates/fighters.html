@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Aura Fighters 67{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/css/fighters.css">
+<script src="/js/fighters.js" defer></script>
+<div class="heading"><p class="eyebrow">ARCADE / 67</p><h1>Aura Fighters 67</h1><p>Duelo de energia em uma arena de arcade.</p></div>
+<section class="panel fighters">
+<div class="fighter-hud"><div><strong>MONSTRO</strong><progress id="fighter-one" value="100" max="100"></progress><small id="fighter-energy">Aura 100%</small></div><strong id="fighter-timer">60</strong><div><strong>MONSTRO 2</strong><progress id="fighter-two" value="100" max="100"></progress><small>Computador</small></div></div>
+<canvas id="fighters" width="800" height="420" aria-label="Arena de duelo de energia"></canvas>
+<div class="fighter-actions"><button id="fighter-start">Jogar</button><button data-act="left">←</button><button data-act="right">→</button><button data-act="jump">↑ Pular</button><button data-act="pulse">Pulso de aura</button><button data-act="shield">Escudo</button></div>
+<p id="fighter-status" role="status">Setas ou A/D para andar, W para pular, J para lançar aura e K para escudo.</p>
+<p>Vitórias nesta sessão: <strong id="fighter-wins">0</strong></p>
+</section>
+{% endblock %}
