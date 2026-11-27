@@ -2,7 +2,7 @@ import hmac
 import os
 import secrets
 from functools import wraps
-from pathlib import Path
+from psycopg.errors import UniqueViolation
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError, VerificationError
@@ -20,19 +20,18 @@ def create_app():
     app = Flask(__name__)
     app.config.update(
         SECRET_KEY=os.environ.get("FLASK_SECRET_KEY", ""),
-        DATABASE=os.environ.get(
-            "PAYROLL_DATABASE", str(Path(app.instance_path) / "folha.db")
-        ),
+        DATABASE_URL=os.environ.get("DATABASE_URL"),
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
     )
     if not app.config["SECRET_KEY"]:
+        if os.environ.get("VERCEL"):
+            raise RuntimeError("Configure FLASK_SECRET_KEY no Vercel.")
         # Chave efêmera para facilitar a execução local; sessões expiram ao reiniciar.
         app.config["SECRET_KEY"] = secrets.token_hex(32)
         app.logger.warning("FLASK_SECRET_KEY não definida; sessões serão invalidadas ao reiniciar.")
 
-    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     app.teardown_appcontext(close_db)
 
     @app.before_request
@@ -43,7 +42,7 @@ def create_app():
             row = get_db().execute(
                 """SELECT u.*, e.full_name, e.department, e.code
                    FROM users u LEFT JOIN employees e ON e.id = u.employee_id
-                   WHERE u.id = ?""", (user_id,)
+                   WHERE u.id = %s""", (user_id,)
             ).fetchone()
             if row and row["active"]:
                 g.user = dict(row)
@@ -91,7 +90,7 @@ def create_app():
             username = request.form.get("username", "").strip().lower()
             password = request.form.get("password", "")
             row = get_db().execute(
-                "SELECT * FROM users WHERE username = ? AND active = 1", (username,)
+                "SELECT * FROM users WHERE username = %s AND active = 1", (username,)
             ).fetchone()
             valid = False
             if row:
@@ -126,7 +125,7 @@ def create_app():
                 flash("A confirmação da senha não corresponde.", "error")
             else:
                 get_db().execute(
-                    "UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?",
+                    "UPDATE users SET password_hash = %s, must_change_password = 0 WHERE id = %s",
                     (hasher.hash(password), g.user["id"]),
                 )
                 get_db().commit()
@@ -140,13 +139,13 @@ def create_app():
         db = get_db()
         if g.user["role"] == "funcionario":
             count = db.execute(
-                "SELECT COUNT(*) AS n FROM payrolls WHERE employee_id = ? AND status = 'fechada'",
+                "SELECT COUNT(*) AS n FROM payrolls WHERE employee_id = %s AND status = 'fechada'",
                 (g.user["employee_id"],),
             ).fetchone()["n"]
         elif g.user["role"] == "gestor":
             count = db.execute(
                 """SELECT COUNT(*) AS n FROM payrolls p JOIN employees e ON e.id=p.employee_id
-                   WHERE e.department = ? AND p.status = 'rascunho'""", (g.user["department"],)
+                   WHERE e.department = %s AND p.status = 'rascunho'""", (g.user["department"],)
             ).fetchone()["n"]
         else:
             count = db.execute("SELECT COUNT(*) AS n FROM payrolls").fetchone()["n"]
@@ -186,17 +185,17 @@ def create_app():
                 db = get_db()
                 cursor = db.execute(
                     """INSERT INTO employees(code, full_name, email, department, job_title, base_salary)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
+                       VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
                     (data["code"], data["full_name"], data["email"].lower(),
                      data["department"], data["job_title"], float(salary)),
                 )
-                employee_id = cursor.lastrowid
+                employee_id = cursor.fetchone()["id"]
                 # Nível 3 permite a consulta do próprio demonstrativo; ReBAC ainda
                 # restringe funcionários ao registro vinculado à sua conta.
                 clearance = 2 if role == "gestor" else 3
                 db.execute(
                     """INSERT INTO users(username, password_hash, role, employee_id, clearance)
-                       VALUES (?, ?, ?, ?, ?)""",
+                       VALUES (%s, %s, %s, %s, %s)""",
                     (data["username"].lower(), hasher.hash(password), role, employee_id, clearance),
                 )
                 db.commit()
@@ -206,7 +205,7 @@ def create_app():
                 flash(str(error), "error")
             except Exception as error:
                 get_db().rollback()
-                if "UNIQUE constraint failed" in str(error):
+                if isinstance(error, UniqueViolation):
                     flash("Código, e-mail ou usuário já cadastrado.", "error")
                 else:
                     raise
@@ -253,7 +252,7 @@ def create_app():
             try:
                 employee_id = int(request.form.get("employee_id", ""))
                 employee = db.execute(
-                    "SELECT * FROM employees WHERE id=? AND active=1", (employee_id,)
+                    "SELECT * FROM employees WHERE id=%s AND active=1", (employee_id,)
                 ).fetchone()
                 if not employee:
                     raise ValueError("Selecione um funcionário ativo.")
@@ -269,7 +268,7 @@ def create_app():
                 db.execute(
                     """INSERT INTO payrolls(employee_id, reference, overtime_hours, overtime_rate,
                        bonus, other_earnings, deductions, gross_pay, net_pay, created_by)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                     (employee_id, reference, hours, float(rate), float(bonus), float(other),
                      float(deductions), float(totals["gross_pay"]), float(totals["net_pay"]), g.user["id"]),
                 )
@@ -280,7 +279,7 @@ def create_app():
                 flash(str(error), "error")
             except Exception as error:
                 db.rollback()
-                if "UNIQUE constraint failed" in str(error):
+                if isinstance(error, UniqueViolation):
                     flash("Já existe uma folha desse funcionário para essa referência.", "error")
                 else:
                     raise
@@ -294,7 +293,7 @@ def create_app():
                       e.base_salary, u.clearance
                FROM payrolls p JOIN employees e ON e.id=p.employee_id
                JOIN users u ON u.employee_id=e.id
-               WHERE p.id=?""", (payroll_id,)
+               WHERE p.id=%s""", (payroll_id,)
         ).fetchone()
         if not row:
             abort(404)
@@ -311,14 +310,14 @@ def create_app():
     def approve_payroll(payroll_id):
         row = get_db().execute(
             """SELECT p.*, e.department FROM payrolls p JOIN employees e ON e.id=p.employee_id
-               WHERE p.id=?""", (payroll_id,)
+               WHERE p.id=%s""", (payroll_id,)
         ).fetchone()
         if not row:
             abort(404)
         resource = {**dict(row), "sensitivity": 2}
         require("approve_payroll", resource)
         get_db().execute(
-            "UPDATE payrolls SET status='aprovada', approved_by=? WHERE id=? AND status='rascunho'",
+            "UPDATE payrolls SET status='aprovada', approved_by=%s WHERE id=%s AND status='rascunho'",
             (g.user["id"], payroll_id),
         )
         get_db().commit()
@@ -328,14 +327,14 @@ def create_app():
     @app.post("/folha/<int:payroll_id>/fechar")
     @login_required
     def close_payroll(payroll_id):
-        row = get_db().execute("SELECT * FROM payrolls WHERE id=?", (payroll_id,)).fetchone()
+        row = get_db().execute("SELECT * FROM payrolls WHERE id=%s", (payroll_id,)).fetchone()
         if not row:
             abort(404)
         resource = {**dict(row), "sensitivity": 3}
         require("close_payroll", resource)
         if row["status"] != "aprovada":
             abort(409, description="A folha precisa estar aprovada antes do fechamento.")
-        get_db().execute("UPDATE payrolls SET status='fechada' WHERE id=?", (payroll_id,))
+        get_db().execute("UPDATE payrolls SET status='fechada' WHERE id=%s", (payroll_id,))
         get_db().commit()
         flash("Folha fechada; o demonstrativo ficou disponível ao funcionário.", "success")
         return redirect(url_for("payroll_list"))
@@ -347,8 +346,11 @@ def create_app():
     def handle_error(error):
         return render_template("error.html", error=error), error.code
 
-    with app.app_context():
+    @app.cli.command("init-db")
+    def init_db_command():
         init_db()
+        print("Banco inicializado.")
+
     return app
 
 

@@ -1,13 +1,13 @@
 # Folha Clara — sistema didático de folha de pagamento
 
-Aplicação web em Python/Flask e SQLite para demonstrar autorização por papéis (RBAC), atributos (ABAC) e relacionamentos (ReBAC). O sistema inclui cadastro de funcionários e contas vinculadas, autenticação, troca obrigatória de senha inicial, lançamentos, cálculo demonstrativo, aprovação por gestor, fechamento por RH e consulta de demonstrativo.
+Aplicação web em Python/Flask e PostgreSQL para demonstrar autorização por papéis (RBAC), atributos (ABAC) e relacionamentos (ReBAC). O sistema inclui cadastro de funcionários e contas vinculadas, autenticação, troca obrigatória de senha inicial, lançamentos, cálculo demonstrativo, aprovação por gestor, fechamento por RH e consulta de demonstrativo.
 
 ## Requisitos
 
 - Python 3.10 ou superior
 - Debian/Linux ou outro ambiente com Python e `venv`
 - Acesso ao índice de pacotes Python para instalar as dependências
-- Não exige `sudo`, servidor de banco ou Java
+- Banco PostgreSQL (por exemplo, Neon); não exige Java
 
 ## Instalação
 
@@ -22,12 +22,13 @@ pip install -r requirements.txt
 Defina uma chave de sessão para o ambiente local, crie contas de exemplo e inicie o servidor:
 
 ```bash
+export DATABASE_URL="postgresql://usuario:senha@host/neondb?sslmode=require"
 export FLASK_SECRET_KEY="substitua-por-uma-chave-aleatoria-longa"
 python seed.py
 python app.py
 ```
 
-Abra `http://127.0.0.1:5000`. O comando `seed.py` mostra senhas temporárias aleatórias uma única vez; guarde-as e troque-as no primeiro acesso. O banco é criado em `instance/folha.db`. Para usar outro caminho, defina `PAYROLL_DATABASE`.
+Abra `http://127.0.0.1:5000`. O comando `seed.py` mostra senhas temporárias aleatórias uma única vez; guarde-as e troque-as no primeiro acesso. O comando inicializa as tabelas no PostgreSQL indicado por `DATABASE_URL`. Para criar somente as tabelas, execute `python -m flask --app app init-db`.
 
 Para uma instância HTTPS, defina também `COOKIE_SECURE=1`. Não use a chave de exemplo nem as contas de demonstração em produção.
 
@@ -61,7 +62,6 @@ folha_pagamento/
 ├── seed.py
 ├── requirements.txt
 ├── README.md
-├── instance/                 # banco SQLite criado na primeira execução
 ├── static/css/app.css
 └── templates/
     ├── base.html
@@ -76,4 +76,13 @@ folha_pagamento/
     └── payslip.html
 ```
 
-Java não é necessário neste projeto: o back-end solicitado está implementado em Python/Flask. O SQLite é acessado pela biblioteca padrão `sqlite3`.
+Java não é necessário neste projeto: o back-end solicitado está implementado em Python/Flask. O PostgreSQL é acessado pelo Psycopg 3.
+
+## Deploy no Vercel + Neon
+
+1. Crie um projeto PostgreSQL no Neon e copie a URL de conexão com pooling.
+2. No Vercel, importe o repositório (preset Flask, raiz `./`) e configure `DATABASE_URL`, `FLASK_SECRET_KEY` (chave aleatória persistente) e `COOKIE_SECURE=1`.
+3. No computador local, instale as dependências e configure a mesma `DATABASE_URL` em uma variável de ambiente privada. Execute `python seed.py` uma vez para criar as contas fictícias e anote as senhas temporárias. Não execute em um banco real.
+4. Faça o deploy/redeploy. O app não cria arquivos locais nem executa DDL durante a inicialização do servidor.
+
+O banco SQLite antigo não é migrado automaticamente. Não publique credenciais nem dados reais neste projeto didático.

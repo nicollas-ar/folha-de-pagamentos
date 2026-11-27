@@ -4,13 +4,15 @@ import secrets
 from argon2 import PasswordHasher
 
 from app import app
-from db import get_db
+from db import get_db, init_db
 
 
 def main():
     hasher = PasswordHasher()
     with app.app_context():
+        init_db()
         db = get_db()
+        db.execute("SELECT pg_advisory_xact_lock(74219832)")
         if db.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]:
             print("Já existem contas. Nenhuma conta de demonstração foi criada.")
             return
@@ -25,30 +27,29 @@ def main():
         for code, name, email, department, title, salary, username, role, clearance in people:
             cursor = db.execute(
                 """INSERT INTO employees(code, full_name, email, department, job_title, base_salary)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
                 (code, name, email, department, title, salary),
             )
             password = secrets.token_urlsafe(18)
             db.execute(
                 """INSERT INTO users(username, password_hash, role, employee_id, clearance,
-                   must_change_password) VALUES (?, ?, ?, ?, ?, 1)""",
-                (username, hasher.hash(password), role, cursor.lastrowid, clearance),
+                   must_change_password) VALUES (%s, %s, %s, %s, %s, 1)""",
+                (username, hasher.hash(password), role, cursor.fetchone()["id"], clearance),
             )
             credentials.append((username, password, role))
 
         admin_password = secrets.token_urlsafe(18)
         db.execute(
             """INSERT INTO users(username, password_hash, role, clearance, must_change_password)
-               VALUES (?, ?, 'admin', 3, 1)""",
+               VALUES (%s, %s, 'admin', 3, 1)""",
             ("admin", hasher.hash(admin_password)),
         )
-        db.commit()
 
         rh_id = db.execute("SELECT id FROM users WHERE username='carla'").fetchone()["id"]
         db.execute(
             """INSERT INTO payrolls(employee_id, reference, overtime_hours, overtime_rate, bonus,
                other_earnings, deductions, gross_pay, net_pay, status, created_by)
-               SELECT id, '2026-10', 4, 35, 300, 0, 450, 4940, 4490, 'rascunho', ?
+               SELECT id, '2026-10', 4, 35, 300, 0, 450, 4940, 4490, 'rascunho', %s
                FROM employees WHERE code='E001'""", (rh_id,)
         )
         db.commit()
