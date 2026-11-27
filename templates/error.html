@@ -1,5 +1,0 @@
-{% extends 'base.html' %}
-{% block title %}Acesso indisponível · Folha Clara{% endblock %}
-{% block content %}
-<section class="error-card card"><span class="error-code">{{ error.code }}</span><h1>{% if error.code == 403 %}Acesso negado{% elif error.code == 404 %}Registro não encontrado{% elif error.code == 409 %}Operação não permitida{% else %}Requisição inválida{% endif %}</h1><p>{{ error.description or 'A operação não pôde ser concluída.' }}</p><a class="button primary" href="{{ url_for('index') }}">Voltar</a></section>
-{% endblock %}
