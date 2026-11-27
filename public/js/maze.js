@@ -18,14 +18,24 @@ const map=[
 '#.............#',
 '###############'];
 const T=30,D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},key=(x,y)=>x+','+y,open=(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!=='#';
-const monster=new Image();monster.src='/images/aura-monster.svg';
+const monster=new Image();monster.src='/images/maze-ghost.svg';
 let player,ghosts,dots,score=0,lives=3,level=1,power=0,immune=0,dir='left',want='left',playing=false,paused=false,busy=false,token='',last=0,acc=0,ga=0,frame=0,age=0;
 function resetActors(){player={x:7,y:13};ghosts=[{x:7,y:7,c:'#ff628e'},{x:1,y:1,c:'#ab8bff'},{x:13,y:1,c:'#63dcff'}];dir=want='left';immune=1.8;}
 function resetMap(){dots=new Map();map.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='.'||c==='o')dots.set(key(x,y),c);}));resetActors();}
 function hud(){document.getElementById('maze-score').textContent=score;document.getElementById('maze-lives').textContent=lives;document.getElementById('maze-level').textContent=level;}
 function draw(){ctx.fillStyle='#080c1a';ctx.fillRect(0,0,450,450);map.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='#'){ctx.fillStyle='#222950';ctx.fillRect(x*T+2,y*T+2,26,26);ctx.strokeStyle='#6465c9';ctx.strokeRect(x*T+3,y*T+3,24,24);}}));for(const [k,c] of dots){const [x,y]=k.split(',').map(Number);ctx.fillStyle=c==='o'?'#b5ff75':'#b9f1ff';ctx.beginPath();ctx.arc(x*T+15,y*T+15,c==='o'?6:2.7,0,Math.PI*2);ctx.fill();}
-for(const g of ghosts){ctx.fillStyle=power>0?'#416dbf':g.c;ctx.beginPath();ctx.roundRect(g.x*T+4,g.y*T+4,22,23,[11,11,3,3]);ctx.fill();ctx.fillStyle='white';ctx.fillRect(g.x*T+9,g.y*T+11,4,5);ctx.fillRect(g.x*T+17,g.y*T+11,4,5);}
-ctx.globalAlpha=immune>0&&Math.floor(immune*8)%2?.55:1;if(monster.complete&&monster.naturalWidth)ctx.drawImage(monster,player.x*T-3,player.y*T-3,36,36);else{ctx.fillStyle='#a4ff69';ctx.beginPath();ctx.arc(player.x*T+15,player.y*T+15,12,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+for(const g of ghosts){
+ const gx=g.x*T+15,gy=g.y*T+15;
+ ctx.save();if(power>0)ctx.globalAlpha=.5;
+ ctx.fillStyle=g.c;ctx.beginPath();ctx.arc(gx,gy,14,0,Math.PI*2);ctx.fill();
+ if(monster.complete&&monster.naturalWidth)ctx.drawImage(monster,gx-14,gy-15,28,30);
+ else {ctx.fillStyle='#fff';ctx.fillRect(gx-7,gy-4,4,5);ctx.fillRect(gx+3,gy-4,4,5);}
+ ctx.restore();
+}
+ctx.globalAlpha=immune>0&&Math.floor(immune*8)%2?.55:1;
+const angle={right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2}[dir];
+const mouth=playing&&!paused?.12+.32*Math.abs(Math.sin(age*18)):.32;
+ctx.fillStyle='#ffe23d';ctx.beginPath();ctx.moveTo(player.x*T+15,player.y*T+15);ctx.arc(player.x*T+15,player.y*T+15,12,angle+mouth,angle+Math.PI*2-mouth);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
 if(paused){ctx.fillStyle='#000a';ctx.fillRect(0,0,450,450);ctx.fillStyle='#fff';ctx.font='bold 32px Arial';ctx.textAlign='center';ctx.fillText('PAUSA',225,225);}}
 function move(p,d){const [dx,dy]=D[d];if(!open(p.x+dx,p.y+dy))return false;p.x+=dx;p.y+=dy;return true;}
 function collision(){if(immune>0)return;for(const g of ghosts){if(g.x!==player.x||g.y!==player.y)continue;if(power>0){score+=30;g.x=7;g.y=7;immune=.4;}else{lives--;if(lives<=0){finish();return;}resetActors();power=0;}break;}}
