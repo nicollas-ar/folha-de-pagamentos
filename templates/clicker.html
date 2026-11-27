@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Celso Clicker{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/css/clicker.css">
+<script src="/js/clicker.js" defer></script>
+<div class="heading"><p class="eyebrow">ARCADE / 67</p><h1>Celso Clicker</h1><p>Um império de aura, um clique de cada vez.</p></div>
+<div id="celso-game" data-user="{{ current_user.id }}" class="clicker-layout">
+<section class="panel clicker-main">
+<p class="eyebrow">SEU SALDO DE AURA</p><strong id="clicker-balance">0</strong><p id="clicker-rate">0 aura/s · 1 aura/clique</p>
+<button id="clicker-target" aria-label="Farmar aura"><img src="/images/fighter-monstro.svg" alt="Personagem do Celso Clicker"></button>
+<p id="clicker-tier">Nível 1 · Iniciante</p><progress id="clicker-level" value="0" max="100"></progress>
+<p id="clicker-status" role="status">Clique na foto ou pressione Espaço.</p>
+<div class="clicker-stats"><div>Total farmado <strong id="clicker-total">0</strong></div><div>Cliques <strong id="clicker-clicks">0</strong></div></div>
+</section>
+<section class="panel"><p class="eyebrow">LOJA DE AURA</p><h2>Melhorias</h2><p>Use apenas os pontos fictícios do jogo.</p><div id="clicker-shop"></div><p id="clicker-save">Progresso salvo neste navegador.</p></section>
+</div>
+{% endblock %}
