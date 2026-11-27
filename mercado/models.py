@@ -179,3 +179,11 @@ class RaceScore(Base):
     score = Column(Integer, nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=now)
     __table_args__ = (CheckConstraint('score >= 0'),)
+
+
+class MazeScore(Base):
+    __tablename__ = 'maze_scores'
+    user_id = Column(ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    score = Column(Integer, nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=now)
+    __table_args__ = (CheckConstraint('score >= 0'),)
