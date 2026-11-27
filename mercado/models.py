@@ -171,3 +171,11 @@ class ResetToken(Base):
     digest = Column(String(64), unique=True, nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     used = Column(Boolean, nullable=False, default=False)
+
+
+class RaceScore(Base):
+    __tablename__ = 'race_scores'
+    user_id = Column(ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    score = Column(Integer, nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=now)
+    __table_args__ = (CheckConstraint('score >= 0'),)
