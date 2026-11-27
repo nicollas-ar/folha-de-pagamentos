@@ -2,6 +2,20 @@
 
 Projeto completo para Laboratório de Programação 1, com MVC, MPA, Flask/Jinja2, ORM SQLAlchemy e PostgreSQL na Vercel. Professor: Celso Gonsalez Saes.
 
+## Deploy automático na Vercel (sem terminal)
+
+Importe o repositório como Flask, com diretório raiz padrão. Em Settings > Environment Variables, configure:
+- DATABASE_URL: URL PostgreSQL do Neon (pooler, com SSL).
+- SECRET_KEY: segredo aleatório de pelo menos 32 caracteres.
+- APP_ENV: production.
+- APP_URL: endereço público do site.
+- ADMIN_EMAIL: e-mail do primeiro administrador.
+- ADMIN_PASSWORD: frase-senha de 15 a 128 caracteres, com pelo menos 8 caracteres distintos.
+- ADMIN_NAME: opcional, padrão Administrador.
+- SEED_DEMO: opcional, padrão true; use false para começar sem produtos fictícios.
+
+Use um banco novo e exclusivo para o Mercado Viva. O primeiro acesso cria as tabelas por Alembic, o administrador e, opcionalmente, os produtos fictícios. A inicialização é protegida por uma trava transacional no PostgreSQL. As credenciais não alteram administradores existentes. Após confirmar o primeiro login, remova ADMIN_PASSWORD das variáveis e faça um novo deploy. Não publique segredos no GitHub. Os comandos locais abaixo continuam disponíveis para desenvolvimento.
+
 ## Comece aqui
 
 Leia **docs/ROTEIRO_ALUNO.md** para instalação, criação do banco, GitHub, Vercel e domínio; **docs/MANUAL_SISTEMA.md** para operar; **docs/ARQUITETURA.md** para estudar o código; **docs/AVALIACAO_PROFESSOR.md** para validar.
